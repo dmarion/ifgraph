@@ -438,7 +438,7 @@ sub createCommandDefs {
 #  pointer to @opcoes, the array with the options turned off (0) or on (1)
 
 sub parseOptions {
-  my(@opcoes)=(1,-1,-1,1,1,0,0,1);
+  my(@opcoes)=(1,-1,-1,1,1,0,0,1,0);
   my($totaloptions)=@_;
   my(@splited)=split(",",$totaloptions);
   for (my($i)=0; $i < scalar(@splited); $i++) {
@@ -458,6 +458,7 @@ sub parseOptions {
     #elsif ($splited[$i] =~ /\A *nograph *\Z/i) { $opcoes[6]=-1 }
     elsif ($splited[$i] =~ /\A *minorgrid *\Z/i) { $opcoes[7]=1 }
     elsif ($splited[$i] =~ /\A *nominorgrid *\Z/i) { $opcoes[7]=-1 }
+    elsif ($splited[$i] =~ /\A *altautoscale *\Z/i) { $opcoes[8]=-1 }
   }
   return(\@opcoes);
 }
@@ -647,6 +648,7 @@ sub criaGraficoBytes {
   my($opt_rigid)="";
   my($opt_legend)="";
   my($opt_nominor)="";
+  my($opt_altautoscale)="";
   # reconfiguring dimension
   if ($$targets[$targetindex][7]->[0] ne "") { $dim_width=$$targets[$targetindex][7]->[0]; }
   if ($$targets[$targetindex][7]->[1] ne "") { $dim_height=$$targets[$targetindex][7]->[1]; }
@@ -672,6 +674,7 @@ sub criaGraficoBytes {
   }
   if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
   if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
+  if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
   # reconfiguring text options
   if ($$targets[$targetindex][9] eq "") { $$targets[$targetindex][9]="Bytes In\/Out"; }
   if ($$targets[$targetindex][10] eq "") { $$targets[$targetindex][10]="Bytes In\/Out for Interface $targets->[$targetindex][5] of $targets->[$targetindex][2]"; }
@@ -683,7 +686,7 @@ sub criaGraficoBytes {
   &debug("criaGraficoBytes(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow, $color_in, $color_out\ncriaGraficoBytes(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoBytes(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\n");
   my($start);
   while ($start=shift(@period)) {
-	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b 1000 $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \" $$targets[$targetindex][9] \" -t \"$$targets[$targetindex][10]\" $opt_inout_def CDEF:deltain=totalin,errin,-,0,LT,0,totalin,errin,-,IF CDEF:in=deltain,0,LT,0,deltain,IF,$bwidth_in,GT,$bwidth_in,deltain,IF CDEF:deltaout=totalout,errout,-,0,LT,0,totalout,errout,-,IF CDEF:out=deltaout,0,LT,0,deltaout,IF,$bwidth_out,GT,$bwidth_out,deltaout,IF CDEF:kbin=in,1000,\/ CDEF:kbout=out,1000,\/ CDEF:percbin=in,100,*,$bwidth_in,\/ CDEF:percbout=out,100,*,$bwidth_out,\/ AREA:in$color_in:\"$$targets[$targetindex][11]->[0]\" LINE2:out$color_out:\"$$targets[$targetindex][11]->[1]\\l\" GPRINT:kbin:LAST:\'$$targets[$targetindex][11]->[0] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:LAST:\' (%.1lf%%)\' GPRINT:kbin:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:AVERAGE:\' (%.1lf%%)\' GPRINT:kbin:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:MAX:\' (%.1lf%%)\\l\' GPRINT:kbout:LAST:\'$$targets[$targetindex][11]->[1] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:LAST:\' (%.1lf%%)\' GPRINT:kbout:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:AVERAGE:\' (%.1lf%%)\' GPRINT:kbout:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:MAX:\' (%.1lf%%)\\l\' COMMENT:\'Max bytes for target $targets->[$targetindex][0]\: $bwidth_in - $bwidth_out bytes/sec\\l\' $opt_error\n")|| die("criaGraficoBytes() Fatal: Could not print to filehandle RRDTOOL: $!\n");
+	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b 1000 $opt_altautoscale $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \" $$targets[$targetindex][9] \" -t \"$$targets[$targetindex][10]\" $opt_inout_def CDEF:deltain=totalin,errin,-,0,LT,0,totalin,errin,-,IF CDEF:in=deltain,0,LT,0,deltain,IF,$bwidth_in,GT,$bwidth_in,deltain,IF CDEF:deltaout=totalout,errout,-,0,LT,0,totalout,errout,-,IF CDEF:out=deltaout,0,LT,0,deltaout,IF,$bwidth_out,GT,$bwidth_out,deltaout,IF CDEF:kbin=in,1000,\/ CDEF:kbout=out,1000,\/ CDEF:percbin=in,100,*,$bwidth_in,\/ CDEF:percbout=out,100,*,$bwidth_out,\/ AREA:in$color_in:\"$$targets[$targetindex][11]->[0]\" LINE2:out$color_out:\"$$targets[$targetindex][11]->[1]\\l\" GPRINT:kbin:LAST:\'$$targets[$targetindex][11]->[0] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:LAST:\' (%.1lf%%)\' GPRINT:kbin:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:AVERAGE:\' (%.1lf%%)\' GPRINT:kbin:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:MAX:\' (%.1lf%%)\\l\' GPRINT:kbout:LAST:\'$$targets[$targetindex][11]->[1] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:LAST:\' (%.1lf%%)\' GPRINT:kbout:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:AVERAGE:\' (%.1lf%%)\' GPRINT:kbout:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:MAX:\' (%.1lf%%)\\l\' COMMENT:\'Max bytes for target $targets->[$targetindex][0]\: $bwidth_in - $bwidth_out bytes/sec\\l\' $opt_error\n")|| die("criaGraficoBytes() Fatal: Could not print to filehandle RRDTOOL: $!\n");
   }
 }
 
@@ -701,6 +704,7 @@ sub criaGraficoBits {
   my($opt_rigid)="";
   my($opt_legend)="";
   my($opt_nominor)="";
+  my($opt_altautoscale)="";
   # reconfiguring dimension
   $dim_width=$$targets[$targetindex][7]->[0];
   $dim_height=$$targets[$targetindex][7]->[1];
@@ -726,6 +730,7 @@ sub criaGraficoBits {
   }
   if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
   if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
+  if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
   # reconfiguring text options
   if ($$targets[$targetindex][9] eq "") { $$targets[$targetindex][9]="Bits In\/Out"; }
   if ($$targets[$targetindex][10] eq "") { $$targets[$targetindex][10]="Bits In\/Out for Interface $targets->[$targetindex][5] of $targets->[$targetindex][2]"; }
@@ -737,7 +742,7 @@ sub criaGraficoBits {
   &debug("criaGraficoBits(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow, $color_in, $color_out\ncriaGraficoBits(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoBits(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\n");
   my($start);
   while ($start=shift(@period)) {
-	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b 1000 $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $opt_inout_def  CDEF:deltain=totalin,errin,-,0,LT,0,totalin,errin,-,IF CDEF:in=deltain,0,LT,0,deltain,IF,$bytes_bwidth_in,GT,$bytes_bwidth_in,deltain,IF CDEF:deltaout=totalout,errout,-,0,LT,0,totalout,errout,-,IF CDEF:out=deltaout,0,LT,0,deltaout,IF,$bytes_bwidth_out,GT,$bytes_bwidth_out,deltaout,IF CDEF:bitsin=in,8,* CDEF:bitsout=out,8,* CDEF:kbitsin=bitsin,1000,\/ CDEF:kbitsout=bitsout,1000,\/ CDEF:percbin=bitsin,100,*,$bwidth_in,\/ CDEF:percbout=bitsout,100,*,$bwidth_out,\/ CDEF:berrin=errin,8,\/ CDEF:berrout=errout,8,\/ AREA:bitsin$color_in:\"$$targets[$targetindex][11]->[0]\" LINE2:bitsout$color_out:\"$$targets[$targetindex][11]->[1]\\l\" GPRINT:kbitsin:LAST:\'$$targets[$targetindex][11]->[0] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:LAST:\' (%.1lf%%)\' GPRINT:kbitsin:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:AVERAGE:\' (%.1lf%%)\' GPRINT:kbitsin:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:MAX:\' (%.1lf%%)\\l\' GPRINT:kbitsout:LAST:\'$$targets[$targetindex][11]->[1] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:LAST:\' (%.1lf%%)\' GPRINT:kbitsout:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:AVERAGE:\' (%.1lf%%)\' GPRINT:kbitsout:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:MAX:\' (%.1lf%%)\\l\' COMMENT:\'Max bits for target $targets->[$targetindex][0]\\: $bwidth_in - $bwidth_out bits/sec \\l\' $opt_error\n") || die("criaGraficoBits() Fatal: Could not print to filehandle RRDTOOL: $!\n");
+	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b 1000 $opt_altautoscale $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $opt_inout_def  CDEF:deltain=totalin,errin,-,0,LT,0,totalin,errin,-,IF CDEF:in=deltain,0,LT,0,deltain,IF,$bytes_bwidth_in,GT,$bytes_bwidth_in,deltain,IF CDEF:deltaout=totalout,errout,-,0,LT,0,totalout,errout,-,IF CDEF:out=deltaout,0,LT,0,deltaout,IF,$bytes_bwidth_out,GT,$bytes_bwidth_out,deltaout,IF CDEF:bitsin=in,8,* CDEF:bitsout=out,8,* CDEF:kbitsin=bitsin,1000,\/ CDEF:kbitsout=bitsout,1000,\/ CDEF:percbin=bitsin,100,*,$bwidth_in,\/ CDEF:percbout=bitsout,100,*,$bwidth_out,\/ CDEF:berrin=errin,8,\/ CDEF:berrout=errout,8,\/ AREA:bitsin$color_in:\"$$targets[$targetindex][11]->[0]\" LINE2:bitsout$color_out:\"$$targets[$targetindex][11]->[1]\\l\" GPRINT:kbitsin:LAST:\'$$targets[$targetindex][11]->[0] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:LAST:\' (%.1lf%%)\' GPRINT:kbitsin:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:AVERAGE:\' (%.1lf%%)\' GPRINT:kbitsin:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbin:MAX:\' (%.1lf%%)\\l\' GPRINT:kbitsout:LAST:\'$$targets[$targetindex][11]->[1] - Now\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:LAST:\' (%.1lf%%)\' GPRINT:kbitsout:AVERAGE:\'Avg\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:AVERAGE:\' (%.1lf%%)\' GPRINT:kbitsout:MAX:\'Max\\: %.$targets->[$targetindex][20]lf $$targets[$targetindex][13]\\g\' GPRINT:percbout:MAX:\' (%.1lf%%)\\l\' COMMENT:\'Max bits for target $targets->[$targetindex][0]\\: $bwidth_in - $bwidth_out bits/sec \\l\' $opt_error\n") || die("criaGraficoBits() Fatal: Could not print to filehandle RRDTOOL: $!\n");
   }
 }
 
@@ -750,6 +755,7 @@ sub criaGraficoOid {
   my($opt_rigid)="";
   my($opt_legend)="";
   my($opt_nominor)="";
+  my($opt_altautoscale)="";
   # reconfiguring dimension
   if ($$targets[$targetindex][7]->[0] ne "") { $dim_width=$$targets[$targetindex][7]->[0]; }
   if ($$targets[$targetindex][7]->[1] ne "") { $dim_height=$$targets[$targetindex][7]->[1]; }
@@ -770,6 +776,7 @@ sub criaGraficoOid {
   if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid -u $max"; }
   if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
   if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
+  if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
   # reconfiguring text options
   if ($$targets[$targetindex][9] eq "") { $$targets[$targetindex][9]="Data collected via SNMP"; }
   if ($$targets[$targetindex][10] eq "") { $$targets[$targetindex][10]="Data for host $targets->[$targetindex][2]"; }
@@ -779,7 +786,7 @@ sub criaGraficoOid {
   &debug("criaGraficoOid(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow, $color_in, $color_out\ncriaGraficoOid(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoOid(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\ncriaGraficoOid(): Oid definitions are $targets->[$targetindex][18]\n");
   my($start);
   while ($start=shift(@period)) {
-	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b $targets->[$targetindex][12] $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $$targets[$targetindex][18] \n") || die("criaGraficoOid() Fatal: Could not print to filehandle RRDTOOL: $!\n");
+	  print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b $targets->[$targetindex][12] $opt_altautoscale $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $$targets[$targetindex][18] \n") || die("criaGraficoOid() Fatal: Could not print to filehandle RRDTOOL: $!\n");
   }
 }
 
@@ -793,6 +800,7 @@ sub criaGraficoCommand {
 	my($opt_rigid)="";
 	my($opt_legend)="";
 	my($opt_nominor)="";
+        my($opt_altautoscale)="";
 	# reconfiguring dimension
 	if ($$targets[$targetindex][7]->[0] ne "") { $dim_width=$$targets[$targetindex][7]->[0]; }
 	if ($$targets[$targetindex][7]->[1] ne "") { $dim_height=$$targets[$targetindex][7]->[1]; }
@@ -811,6 +819,7 @@ sub criaGraficoCommand {
 	if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid -u $max"; }
 	if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
 	if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
+        if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
 	# reconfiguring text options
 	if ($$targets[$targetindex][9] eq "") { $$targets[$targetindex][9]="Command Outputs"; }
 	if ($$targets[$targetindex][10] eq "") { $$targets[$targetindex][10]="Output from $targets->[$targetindex][2]"; }
@@ -820,7 +829,7 @@ sub criaGraficoCommand {
 	&debug("criaGraficoCommand(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow\ncriaGraficoCommand(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoCommand(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\ncriaGraficoCommand(): Command definitions are $targets->[$targetindex][18]\n");
 	my($start);
 	while ($start=shift(@period)) {
-		print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b $targets->[$targetindex][12] $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $$targets[$targetindex][18] \n") || die("criaGraficoCommand() Fatal: Could not print to filehandle RRDTOOL: $!\n");
+		print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b $targets->[$targetindex][12] $opt_altautoscale $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $$targets[$targetindex][18] \n") || die("criaGraficoCommand() Fatal: Could not print to filehandle RRDTOOL: $!\n");
 	}
 }
 
