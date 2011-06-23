@@ -201,6 +201,7 @@ close(RRDTOOL);
 sub reconfigureTarget {
   my($targetsindex)=@_;
   $targets->[$targetindex][1]=&parseMaxes($targets->[$targetindex][1]); # analise maxes and reconfigure
+  $targets->[$targetindex][21]=&parseMaxes($targets->[$targetindex][21]); # analise mins and reconfigure
   $targets->[$targetindex][6]=&parseOptions($targets->[$targetindex][6]); # analise options and reconfigure
   $targets->[$targetindex][7]=&parseDimensions($targets->[$targetindex][7]); # analise dimensions and reconfigure
   $targets->[$targetindex][8]=&parseColors($targets->[$targetindex][8]); # analise colors and reconfigure
@@ -749,6 +750,7 @@ sub criaGraficoBits {
 sub criaGraficoOid {
   my(@period)=split(",",$targets->[$targetindex][16]);
   my($max)=($targets->[$targetindex][1]->[0]);
+  my($min)=($targets->[$targetindex][11]->[0]);
   my($max_desc)=($targets->[$targetindex][1]->[2]); 
   my($color_back,$color_canvas,$color_shadea,$color_shadeb,$color_grid,$color_mgrid,$color_font,$color_frame,$color_arrow,$color_in,$color_out, $dim_width, $dim_height);
   # setting default options
@@ -773,7 +775,7 @@ sub criaGraficoOid {
   if ($$targets[$targetindex][8]->[10] ne "") { $color_out="#"."$$targets[$targetindex][8]->[10]"; }
   # ************************ There is no noerror option
   # ************************ There is no invert option
-  if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid -u $max"; }
+  if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid --upper-limit $max --lower-limit $min"; }
   if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
   if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
   if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
@@ -794,6 +796,7 @@ sub criaGraficoOid {
 sub criaGraficoCommand {
 	my(@period)=split(",",$targets->[$targetindex][16]);
 	my($max)=($targets->[$targetindex][1]->[0]);
+	my($min)=($targets->[$targetindex][21]->[0]);
 	my($max_desc)=($targets->[$targetindex][1]->[2]);
 	my($color_back,$color_canvas,$color_shadea,$color_shadeb,$color_grid,$color_mgrid,$color_font,$color_frame,$color_arrow,$dim_width,$dim_height);
 	# setting default options
@@ -816,7 +819,7 @@ sub criaGraficoCommand {
 	if ($$targets[$targetindex][8]->[8] ne "") { $color_arrow="#"."$$targets[$targetindex][8]->[8]"; }
 	# ************************ There is no noerror option
 	# ************************ There is no invert option
-	if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid -u $max"; }
+	if ($$targets[$targetindex][6]->[2] == 1) { $opt_rigid="--rigid --upper-limit $max --lower-limit $min"; print $opt_rigid."\n";}
 	if ($$targets[$targetindex][6]->[3] == -1) { $opt_legend="--no-legend"; }
 	if ($$targets[$targetindex][6]->[7] == -1) { $opt_nominor="--no-minor"; }
         if ($$targets[$targetindex][6]->[8] == 1) { $opt_altautoscale="--alt-autoscale"; }
@@ -826,7 +829,7 @@ sub criaGraficoCommand {
 	if ($$targets[$targetindex][13] eq "") { $$targets[$targetindex][13]="kB/s"; }
 	my($opt_imgformat)=lc($$global[5]);
 	# end of reconfigure
-	&debug("criaGraficoCommand(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow\ncriaGraficoCommand(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoCommand(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\ncriaGraficoCommand(): Command definitions are $targets->[$targetindex][18]\n");
+	&debug("criaGraficoCommand(): Colors are $color_back, $color_canvas, $color_shadea, $color_shadeb, $color_grid, $color_mgrid, $color_font, $color_frame, $color_arrow\ncriaGraficoCommand(): Options are $$targets[$targetindex][6]->[0] $$targets[$targetindex][6]->[1] $$targets[$targetindex][6]->[2] $$targets[$targetindex][6]->[3] $$targets[$targetindex][6]->[4] $$targets[$targetindex][6]->[5]\ncriaGraficoCommand(): Dimensions are $$targets[$targetindex][7]->[0] x $$targets[$targetindex][7]->[1]\ncriaGraficoCommand(): Command definitions are $targets->[$targetindex][18]\n Rigid=$opt_rigid\n");
 	my($start);
 	while ($start=shift(@period)) {
 		print(RRDTOOL "graph $global->[3]/$targets->[$targetindex][0]$start.$opt_imgformat -a $$global[5] -b $targets->[$targetindex][12] $opt_altautoscale $opt_rigid -s $start -e -$targets->[$targetindex][19] $opt_legend $opt_nominor -w $dim_width -h $dim_height -c BACK$color_back -c CANVAS$color_canvas -c SHADEA$color_shadea -c SHADEB$color_shadeb -c GRID$color_grid -c MGRID$color_mgrid -c FONT$color_font -c FRAME$color_frame -c ARROW$color_arrow -v \"$$targets[$targetindex][9]\" -t \"$$targets[$targetindex][10]\" $$targets[$targetindex][18] \n") || die("criaGraficoCommand() Fatal: Could not print to filehandle RRDTOOL: $!\n");
@@ -839,7 +842,7 @@ sub readconf  {
  my($configfile)=@_;
  my(@splited, @global, @targets, $target_name);
  # Setting targets defaults
- my(@default)=("name","1G","localhost","public",161,0,"","460x150","back#FFFFFF","","","","1000","",1,10,"-1day,-1week,-1month,-1year",0,"",600,2);
+ my(@default)=("name","1G","localhost","public",161,0,"","460x150","back#FFFFFF","","","","1000","",1,10,"-1day,-1week,-1month,-1year",0,"",600,2,0);
  # Setting global defaults
  @global[1,2,3,4,5]=("/usr/local/bin/rrdtool","/usr/local/rrdfiles/","/usr/local/htdocs/","$FindBin::Bin/templates/en/","PNG");
  my($accept_new_target)=1;
@@ -890,6 +893,7 @@ sub readconf  {
      elsif ($splited[0] =~ /periods\Z/i) { $default[16]=$splited[1]; } # optional
      elsif ($splited[0] =~ /hbeat\Z/i) { $default[19]=$splited[1]; } #optional
      elsif ($splited[0] =~ /precision\Z/i) { $default[20]=$splited[1]; } # optional
+     elsif ($splited[0] =~ /min\Z/i) { $default[21]=$splited[1]; } # mandatory
    } else { # if it is a normal target
      $targets[$index][0]=$target_name; 
      if ($splited[0] =~ /max\Z/i) { $targets[$index][1]=$splited[1]; } # mandatory
@@ -918,6 +922,7 @@ sub readconf  {
      elsif ($splited[0] =~ /hbeat\Z/i) { $targets[$index][19]=$splited[1]; } # optional
      elsif ($splited[0] =~ /graph\Z/i) { if ($splited[1] =~ /false|no/i) { $accept_new_target=0; } else { $accept_new_target=1; } }
      elsif ($splited[0] =~ /precision\Z/i) { $default[20]=$splited[1]; }
+     elsif ($splited[0] =~ /min\Z/i) { $targets[$index][21]=$splited[1]; };
    }
   }
  }
