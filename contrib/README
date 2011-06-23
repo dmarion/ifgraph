@@ -1,0 +1,19 @@
+2004.03.01
+----------
+Those are sh scripts that I used to monitor some linux 
+2.4.* machines. Some of them require sed, awk, dig, wc, 
+the proc filesystem and other common system tools. They 
+are pretty simple scripts (almost lame), but are working 
+just fine for me.
+
+You will find three files inside the directories:
+- the script itself (.sh extension)
+- a [target] config for the script (.conf extension)
+- a README, describing whats the script for
+
+There is also a squid_monitoring directory, containing
+an example config file to monitor some squid data.
+
+Use this files at your own risk. Feel free to create new or
+to improve these ones. Send the modifications to me, if 
+you like: sartori@lrv.ufsc.br.

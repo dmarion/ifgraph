@@ -1,0 +1,57 @@
+2004.01.03
+ifgraph-0.4.10
+- Added the spanish template, created by José D. Domenech <loop@foc.dyndns.org>. Thanks José :)
+- Added a contrib directory, containing some scripts/configurations I used with ifgraph.
+- Changed the ifgraph.org domain to ifgraph.lrv.ufsc.br 
+
+2003.11.17
+ifgraph-0.4.10rc3
+- ifgraphs readconf() was not parsing some arguments in the right way (checking string bounds)
+- the makegraph.pl was not verifying the type when it was a command target (Thanks to Andrew Ryder on this)
+- Added the update=[yes|true|no|false] flag, so people can select if the target is to be updated or not.
+- The options [no]legend, [no]rigid were not working on OID and COMMAND targets
+- Added the option [no]minorgrid, that passes the option --no-minor when the target's graphic is created
+- Added the precision directive, so you can select the number of decimal digits that will be shown.
+- Added the -T flag. This will make ifgraph.pl use the $^T perl variable (the time the program started) in the rrdtool updates. The default is to use the rrdtool "N" string.
+
+2003.10.17
+ifgraph-0.4.10rc2
+- makegraph was not jumping the target graphic creating when it had an invalid commdef definition. This issue was fixed.
+- A bug in the ifgraph.pl was not closing the FHs to the commands executed. This was fixed.
+- Fixed a bug in find-if.pl. Some adsl line were reporting 0 speed. Now when this happens, ifgraph sets this to 1G (1000000000). The issue was fixed in makegraph.pl.
+- Fixed the LONG OID bug. When the OID was too long, makegraph was reporting some errors.
+- Added an OBS in the documentation of the step directive
+
+2003.08.29
+ifgraph-0.4.10rc1
+- Added the graph=[yes|true|no|false] directive
+- The global variables rrdtool, rrddir, graphdir and template now have default values
+- added the Color::Rgb from Sherzod Ruzmetov to the script, so it can convert rgb strings to the hexadecimal required in rrdtool
+- ifgraph was not checking the heartbeat of the rrdfiles. This issue was fixed.
+- ifgraph was not checking if a COUNTER rrd were getting reseted. This issue was fixed.
+- support for command output graphics.
+
+2003.05.30
+ifgraph-0.4.9
+- Added support to ifPhysAddress expressed in HH:HH:HH:HH:HH:HH Octet Strings in the find-if.pl ONLY! Found this on Digitel Routers (http://www.digitel.com.br). Anyone has seen this?
+
+2003.05.12
+ifgraph-0.4.9rc2
+- Fixed a bug that was making the avg of IN and OUT data point to the same value. (Pointed by Ken Ebling - thanks)
+- Fixed a bug in the createFileOid() call. It was not removing the initial dots from the OIDs
+- ifgraph now can create child process (fork)
+- Added the -F flag, so you can specify how many child process the program must create
+
+2003.04.25
+ifgraph-0.4.9rc1
+- Added the graph=(true|yes|no|false) directive, so you can choose if the target graph/html is to be created or not
+- makegraph.pl now understands the <$time_(hour|min|sec|mon|day)$> variables in the graphics titles (from Iain Lea'a patch)
+- The horalocal() call already formats the month and year variables now
+- Added the flag -s to the find-if.pl. With this flag set, the script outputs the definitions of the target's interfaces that can be used in the configuration file.
+- The programs now understand the XXXX:XXXX:XXXX, XX:XX:XX:XX:XX:XX and 0xXXXXXXXXXXXX mac format
+- Fixed a bug that was not setting corectly the defaults for the options and colors directives
+- There is an English CHANGELOG (file CHANGELOG). The old Brazilian Portugues CHANGELOG is now in the MUDANCAS file
+- Removed some file checking in makegraph.pl
+- When a target was defined by mac, ip or nome and was not responding, it's graphics were not created. These bug was fixed.
+- Added the "anti-options": error, noinvert, norigid, legend and info.
+- Splited the snmpQuery function in some smaller ones, responsible for more specific methods, making easier to understand the code

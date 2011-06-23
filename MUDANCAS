@@ -1,0 +1,257 @@
+03/01/2004
+ifgraph-0.4.10
+- Adicionado o template espanhol, criado pelo José D. Domenech <loop@foc.dyndns.org>. Valeu José! :)
+- Adicionado um diretorio contrib, contendo alguns scripts e configuracoes que eu venho utilizado com o ifgraph.
+- Alterei o dominio ifgraph.org para ifgraph.lrv.ufsc.br. (Tive problemas com o registrar :/)
+
+17/11/2003
+ifgraph-0.4.10
+- a funcao readconf() do ifgraph.pl nao estava verificando adequadamente as fronteiras dos strings
+- o makegraph.pl nao estava verificando o tipo de dado quando o target era do tipo command (Agradecimentos ao Andrew Ryder por apontar esse problema)
+- Adicionada a diretiva update=[yes|true|no|false], que permite selecionar se determinado target deve ser atualizado com dados ou nao.
+- As opcoes [no]legend e [no]rigid nao estavam funcionando em targets do tipo OID e COMMAND.
+- Adicionada a opcao [no]minorgrid, que passa o argumento --no-minor para o rrdtool quando um grafico vai ser criado.
+- Adicionada a diretiva precision, para que possa ser selecionado o numero de casas decimais depois da virgula.
+- Adicionada a opcao de linha de comando -T. Ela faz com que o ifgraph utilize a variavel $^T da perl (o time() em que o programa foi executado) no rrdtool update. O padrao eh utilizar o string "N" do proprio rrdtool.
+
+17/10/2003
+ifgraph-0.4.10rc2
+- O makegraph nao estava cancelando um target cujas configuracoes commdefs estivessem incorretas. Essa questao foi corrigida.
+- O ifgraph nao estava dando um close() nos filehandles abertos durante o parse de um target do tipo command. Essa questao foi corrigida.
+- Alguns modems adsl reportam o seu max como 0. Quando isso acontecer, o find-if.pl e o makegraph.pl vao ajustar o max para 1G.
+- Alteracoes na documentacao com relacao a diretiva step.
+- Resolvido o bug do makegraph relacionado a OIDs muito longos.
+
+29/08/2003
+ifgraph-0.4.10rc1
+- Adicionada a diretiva graph=[yes|true|no|false]
+- As variaveis globais rrdtool, rrddir, graphdir e template agora possuem valores padrao.
+- Adicionado o modulo Color::RGB do Sherzod Ruzmetov. Dessa forma o makegraph consegue converter strings rgb para o formato hexadecimal que eh requerido pelo rrdtool.
+- o ifgraph.pl nao verificava o hbeat de arquivos que guardavam dados de OIDs. Isso foi corrigido.
+- o ifgraph.pl nao verificava se os dados de um grafico do tipo COUNTER estavam diminuindo ou resetando. Isso foi corrigido.
+- Agora existe suporte para graficos de saida de comandos.
+
+30/05/2003
+ifgraph-0.4.9
+- Adicionei suporte ao ifPhysAddress retornado como OCTET STRING no formato HH:HH:HH:HH:HH:HH no find-if.pl. Verifiquei isso num roteador Digitel. Alguem mais observou esse comportamento?
+
+12/05/2003
+ifgraph-0.4.9rc2
+- Corrigido um problema no makegraph que fazia com que a media (Avg) dos dados IN e OUT fossem sempre a mesma. (Bug apontado pelo by Ken Ebling - valeu!)
+- Corridigo um problema na funcao fileCheckOid(). Ela nao estava removendo os . iniciais dos OIDs antes de criar os aquivos.
+- O ifgraph agora pode criar processos filhos (fork)
+- Adicionada a flag -F, para que seja possivel especificar (via linha de comando) o numero de processos filhos que serao criados
+
+25/04/2003
+ifgraph-0.4.9rc1
+- Adicionada a diretiva graph=(true|yes|false|no) para que seja possivel decidir se o grafico/html de um determinado target serah criado ou nao
+- Adicionado suporte as variaveis <$time_(hour|min|sec|mon|day)$> no titulo dos graficos (baseado no patch do Iain Lea)
+- A funcao horalocal() agora jah retorna as variaveis corretamente formatadas
+- Adicionada a flag -s no find-if.pl. Essa flag gera imprime em STDOUT as definicoes de targets que podem ser adicionadas no arquivo de configuracao
+- Os scripts agora entendem enderecos MAC no formato XXXX:XXXX:XXXX, XX:XX:XX:XX:XX:XX e 0xXXXXXXXXXXXX
+- Corrigido bug que nao setava corretamente os defaults para as diretivas options e colors
+- Agora existe um CHANGELOG em ingles (arquivo CHANGELOG). O antigo CHANGELOG em portugues do Brasil agora se chama MUDANCAS
+- Removido a checagem de arquivos no makegraph.pl
+- Quando um target era definido por mac, ip ou nome e nao respondia, seu grafico nao era gerado. Esse bug foi corrigido.
+- Adicionada as contra opcoes: error, noinvert, norigid, legend e info.
+- A funcao snmpQuery do makegraph.pl foi dividida em outras funcoes, responsaveis por partes especificas, facilitando a compreensao do codigo fonte.
+
+25/03/2003
+ifgraph-0.4.8
+- Adicionada uma modificacao escrita pelo Iain Lea. Agora o ifgraph e o makgraph procuram por um /etc/ifgraph.conf.
+- Corrigida a versao nos templates
+
+12/02/2003
+ifgraph-0.4.8rc3
+- Corrigido o bug que retornava erro na funcao createRRDOid.
+- Corrigido o bug das legendas
+- Mensagens de die() contem o nome da funcao que a chamou
+- Menos dies() e mais prints()
+
+11/02/2003
+ifgraph-0.4.8rc2
+- Eu nao testei o programa adequadamente e apareceram alguns bugs na criacao dos arquivos rrd e na hora da criacao dos graficos. Esses bugs foram corrigidos
+- Retornei a chamada system para a construcao dos arquivos rrd createRRD*()
+
+10/02/2003
+ifgraph-0.4.8rc1
+- Grandes mudancas no funcionamento do programa.
+- Adicionara a funcao parseType(), para verificar se o tipo de RRD a ser construido foi definido corretamente pelo usuario
+- Corrigido o bug do makegraph.pl quando o tipo de imagem nao era IGIF.
+- O programa agora aceita a diretiva OID, na qual podem ser dados diretamente os oids que devem ser coletados e plotados.
+- Removida as diretivas legend1, legend2 e adicionada a diretiva legends.
+- Removidas varias variaveis locais e variaveis passadas por parametro em funcoes e passaram ser usadas algumas variaveis globais que jah estavam sendo declaradas
+- Criadas alguma funcoes novas para tratar de graficos baseados em OID e em interface de maneira diferenciada: fileCheckIf, fileCheckOid, insertOidData, insertOidDataNull, insertIntDataNull, insertIntData, createRRD, createRRDOid, createLog, createLogOid, rrdIntLog, createOidDefs
+- A diretiva max agora permite com que sejam definidos N descricoes de maximo, separadas por / e permite descrever inteiros menores que 1k.
+- Ajustes nos documentos INSTALL e INSTALACAO
+- Adicionada a diretiva kilo, para que seja possivel configurar quanto um kilo de alguma unidade vale.
+- Utilizaçao de um filehandle com o comando "rrdtool -" ao inves das chamadas system("rrdtool ...");
+- O periodo do grafico sempre termina em (agora - heartbeat)
+- Utilizacao da biblioteca padrao da perl File::Copy para mover os arquivos temporarios para os definitivos
+- s/ERROR/Fatal/ && s/Warn/Warning/
+- Corrigido o bug que fazia com que o ifgraph/makegraph terminassem quando o agente snmp estava mal configurado (Ex.: quando somente retornava a tree system)
+- Mudancas no ifgraph.conf padrao
+- As diretivas legends1 e legends2 deixam de existir e passa a ser usada a diretiva legends
+
+15/12/2002
+ifgraph-0.4.7
+- Mudanca nos enderecos: wmaker.lrv.ufsc.br -> ifgraph.org
+- Ajustada a funcao debug()
+
+30/11/2002
+ifgraph-0.4.7rc1
+- Mudancas no template em ingles (en). - Thanks to Iain Lea
+- O ifgraph agora permite com que voce defina, no lugar do numero da interface, o nome, o ip e o mac. Esse tipo de configuracao visa atender usuarios que possuem problemas com o indice de suas interfaces. Para isso foram adicionadas as diretivas:
+interface_name, interface_mac e interface_ip.
+
+01/11/2002
+ifgraph-0.4.6
+- Corrigido o bug que mostrava o ano errado (faltava somar o ano retornado com 1900).
+- Inclusao de um logotipo no diretorio templates, assim como a referencia nos arquivos de trailer dos templates.
+- Mudancas no arquivo de configuracao. Ele continha dados que, se usados sem alteracoes, mostrariam os graficos como se os dados fossem em bits por segundo, quando, na verdade, sao kilobits por segundo. (Thanks to Jan Grewe <jg@faked.de>, who pointed it to me).
+- Adicionada a flag -b, que faz com que todos os graficos sejam criados em bits.
+- Adicionada as opcoes bits e bytes, que fazem com que os respectivos graficos sejam gerados com os dados em bits e bytes por segundo. (As flags da linha de comando -b e -B tem prioridade sobre as definidas no target global e nos targets especificos).
+- Corrigidos alguns problemas cosmeticos, de traducao.
+- Corrigido o bug que fazia com que o makegraph criasse graficos de maneira repetida.
+- Eliminadas algumas (des)funcoes que deveriam estar comentadas/apagadas.
+- Eliminadas algumas variaveis que eram redundates nos programas.
+
+21/10/2002
+ifgaph-0.4.6rc2
+- O find-if.pl mostra o endereco IP e MAC das interfaces de rede.
+- O hbeat agora pode ser um inteiro entre 60 e 345600. Pode-se usar o ifgraph para alimentar um RRD de minuto em minuto.
+- O default heartbeat dos RRDs foi aumentado para 1200.
+- Adicao da diretiva imgformat, que suporta 4 opcoes: gif (unisys gif), gd (boutell GD), png e igif (interlaced gif).
+- Adicao da diretiva <$imgformat$> nos arquivos de template.
+- Adicao da opcao noinfo, que faz com que nao sejam coletados dados SNMP do target durante a construcao dos graficos
+
+06/10/2002
+ifgraph-0.4.6rc1
+- O find-if.pl utiliza a versao 3.65 do Net::SNMP para manter compatibilidade com versoes antigas da perl. Ele nao necessita das funcoes da versao 4.3 do modulo por enquanto.
+- Utilizacao tanto do Net::SNMP versao 3.65 quanto do 4.3
+- A biblioteca Net::SNMP agora eh distribuida junto com o ifgraph, desse modo nao eh necessaria mais a instalacao dela em separado.
+- Utilizacao do use FindBin e do use lib para localizacao e configuracao do arranjo @INC.
+- Adicionada a diretiva hbeat, que descreve o heartbeat de cada data source. Para mais detalhes, consulte o manual do RRDTool (http://www.rrdtool.org).
+- Adicionada a diretiva step, que define qual vai ser o step (o intervalo de tempo em que os dados serao incluidos no banco de dados) do arquivo RRD. Para mais detalhes consulte a documentacao do RRDTool (http://www.rrdtool.org).
+- Adicionada a diretiva RRAs (nao eh senstivo ao caso), para que o usuario possa criar quantos RRAs sejam necessarios. Com essa opcao, o usuario pode setar seus RRAs com grande flexibilidade, ampliando os modos de criacao de graficos
+- Adicionada a diretiva periods, que permite com que o usuario defina os periodos sobre as quais serao gerados os graficos.
+- Adicionados duas opcoes no arquivo de template main-data.html: <$first_period$> e <$last_period$>, que representam o primeiro e o ultimo periodos selecionados pelo usuario.
+
+
+01/07/2002
+ifgraph-0.4.5
+- Agora a funcao parseBandwidth() aceita descricao de banda com valores nao inteiros, ex.: 1.544M, 64.8k.
+- Corrigido um bug na passagem de parametros da funcao createLog(), que causava um erro ao ser gerado o log da interface. Na mesma funcao foi corrigido um erro cosmetico num print, que mostra um erro relacionado a um arquivo rrd, quando na verdade o createLog soh trata com logs. Traduzido o erro que aparecia quando o arquivo de configuracao nao podia ser lido.
+- Voce pode definir as configuracoes padrao (exceto o numero da interface) na secao global.
+- O makegraph.pl agora suporta retry e timeout.
+- Corrigido um bug na funcao parseColors. A expressao regular para dar match na cor era case sensitive.
+- Corrigido um bug apos a chamada da funcao horalocal(), que imprimia o ano incorretamente nos arquivos HTML.
+
+
+01/06/2002
+ifgraph-0.4.4
+- Adicionado um arquivo TODO.
+- Sao criados HTMLs temporarios. Assim evita-se o problema do http server abrir o arquivo no momento em que ele estah sendo construido.
+- Corrigidos alguns erros nas variaveis do qw var()
+- Suporte a templates para criacao de paginas HTML customizadas automaticamente. (Usando a variavel global template no ifgraph.conf ou a flag -T na linha de comando do makegraph.pl)
+- Corrigido um problema na selecao de maximo. O valor maximo quando a opcao rigid for selecionada serah o maior valor definido.
+- Corrigido um problema no organizaGraficos.
+- Na versao 0.4.3 o heartbeat de criacao era 86400, nao importando o que estava setado no arquivo de configuracao.
+- Suporte para timeout e retry no script ifgraph.pl
+
+10/05/2002
+ifgraph-0.4.3
+_ Na diretiva max, voce pode definir duas expressoes de banda separadas por /. A 1a serah considerada a banda maxima para os dados entrantes e a segunda serah para os dados que saem da interface. Assim os dados de interfaces assincronas (como linhas ADSL) podem ser grafados e gravados corretamente.
+- O find-if.pl agora realiza um get_table() a mais (no ifIndex). Isso faz com que os dados de interfaces nao consecutivas sejam mostrados corretamente. Adicionada a flag -d (debug).
+- A opcao hbeat agora permite com que dados coletados incorretamente ou nao coletados sejam tratados como U e nao gerem dados zerados. Eh semelhante ao comportamento padrao do mrtg.
+
+
+21/03/2002
+ifgraph-0.4.2
+- Adicionado um CDEF extra durante a criacao do grafico. Com isso pretende-se de maneira definitiva eliminar os picos causados por erros
+- Mudanca geral no arquivo de configuracao do ifgraph. Ele agora se parece bastante com o do samba, definindo targets no lugar do conjunto host-interface das versoes anteriores. Ele possui um target chamado [global], que define as opcoes RRDDIR, RRDTOOL e GRAPHDIR e o resto eh considerado como configuracao dos targets.
+- Implementadas novas opcoes de configuracao. As configuracoes para cada target agora
+sao as seguintes:
+	* host
+	* community
+	* port
+	* interface
+	* max
+	* dimension
+	* title
+	* colors
+	* options
+	* ylegend
+	* legend1
+	* legend2
+	* shortlegend 
+
+20/02/2002
+ifgraph-0.3.6
+- Adicionado mais um check na criacao do grafico com o RRDTOOL, espero que isso venha a eliminar de vez o problema de picos incorretos nos graficos.
+- Adicionada a flag -h no programa makegraph.pl. Essa flag mostra um help e sai.
+- Adicionada a opcao nolegend. Com essa opcao ativada, o grafico criado nao terah nenhuma legenda.
+- Adicionada a flag -g. Essa eh algo como "graphics only", ou seja, nao serah criado nenhum arquivo HTML. 
+
+
+15/01/2002
+ifgraph-0.3.5
+- Alguns nomes de funcao foram trocados do portugues para o ingles, o que facilita a leitura do codigo pela maioria
+- O makegraph.pl agora tem a opcao rigid, que faz com que o grafico tenha o seu eixo Y sempre setado em "MAX BANDWIDTH"
+- O makegraph.pl agora verifica se o valor coletado anteriormente pelo ifgraph.pl faz sentido ou nao. Se ele for maior que "MAX BANDWIDTH", o seu valor passa a ser o proprio "MAX BANDWIDTH". Isso deve elimiar os picos que ainda aconteciam quando dados errados eram retornados pelo agente SNMP. Portanto, eh muito importante que o valor do MAX BANDWIDTH seja definido corretamente.
+
+
+02/11/2001
+ifgraph-0.3.4
+- O script find-if.pl agora mostra a descricao e o uptime do sistema antes de
+mostrar os dados sobre as interfaces de rede.
+- O script de criacao de graficos makegraph.pl pega via SNMP dados como contato 
+do sistema, localizacao e imprime no HTML sobre a interface de rede.
+- A parte de configuracao muda um pouco para que seja possivel adicionar as 
+configuracoes descritas abaixo. A linha de configuracao fica padronizada assim:
+ IP : comunidade : porta : if # : Max Bits : Descricao : opcao=xx,opcao,opcao=xx,opcao...
+- O programa apresenta agora opcoes de configuracao:
+   * in=#rrbbgg (Cor da area dos dados in)
+   * out=#rrbbg (Cor da linha dos dados out)
+   * bg=#rrbbgg (Cor de fundo da imagem)
+   * font=#rrbbgg (Cor da fonte)
+   * canvas=#rrbbgg (Cor de fundo do grafico)
+   * invert (Inverte in e out)
+   * h=XXX (Altura do grafico - nao da imagem)
+   * w=XXX (Largura do grafico - nao da imagem)
+   * noerror (Nao mostra os dados sobre erros na interface)
+- A pagina da interface de rede apresenta os graficos alinhados a esquerda, e nao 
+mais centralizados.
+
+12/10/2001
+ifgraph 0.3.3
+- Removida a flag -i para inicializacao de RRDs. O programa verifica se os
+arquivos existem, caso nao existam, eles serao criados.
+- Alem dos arquivos de RRD existem agora arquivos de log que auxiliam na deteccao
+de algum erro, seja um reset na maquina ou erros de SNMP.
+- Mudancas nos algoritmos de atualizacao dos RRDs.
+- Reorganizacao (ou nao) do codigo fonte, adicionando comentarios no ifgraph.pl.
+- Corrigidos alguns bugs do find-if.pl.
+
+ifgraph 0.3.2
+- Mudancas na forma de leitura do arquivo de configuracao.
+- Corrigido o bug do superflow. Quando o agente SNMP nao era contatado, os campos
+no arquivo RRD eram preenchidos com lixo, o que gerava um grafico com trafego em
+certos pontos de 120M (!?).
+- use strict;    =:)
+- Por esquecimento havia duas variaveis a mais nas chamadas rrdtool (kberrout e
+kberrin). Ambas foram removidas.
+- Quando o ifgraph nao consegue entrar em contato com algum dos agentes SNMP, o
+programa continua, apenas mostrando uma mensagem de erro e setando os valores para
+0:0:0:0.
+- As datas geradas sao mais "bonitas" agora. Antes, alguns valores eram gerados
+com somente um caractere. Agora o programa adiciona um "0" na frente desses
+valores.
+- No HTML das interfaces de rede, os graficos nao sao mais links para a propria
+pagina.
+
+ifgraph 0.3.1
+- Agora existe um CHANGELOG.
+- Nas versoes anteriores era verificado o Admin Status da interface, o correto
+eh pegar o Oper Status da interface no agente SNMP.
+- Correcoes nas paginas HTML geradas pelo script makegraph.pl.

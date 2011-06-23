@@ -1,0 +1,6 @@
+interface_bytes.sh
+------------------
+This script will read interface information
+from the proc filesystem (/proc/net/dev), getting the
+inbound/outbound traffic rate for the eth0
+interface.

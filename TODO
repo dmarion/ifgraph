@@ -1,0 +1,9 @@
+Those are the urgent things I plan to do in next releases:
+1) Reorganize the code: There are some redundancies that may slow the program execution
+2) More docs
+3) Create an ifgraph.pm containing common code to ifgraph.pl, makegraph.pl and find-if.pl
+down a bit the program and are making it harder to understand.
+4) Comments: Add more comments and functions descriptions to make
+easier to other people to read and rewrite the code.
+5) SNMPv2 and v3 support.
+6) Make it use less memory by reorganizing data structures (Working on it)

@@ -1,0 +1,435 @@
+ifGraph 0.4.10 - 03/01/2004 - Ricardo Sartori <sartori@lrv.ufsc.br>
+
+Requirements:
+ - Perl >= 5.0 (http://www.perl.org)
+ (Perl >= 5.6 is now recommended)
+ - RRDTool >= 1.3.32 (http://ee-staff.ethz.ch/~oetiker/webtools/rrdtool/)
+ (to use some rrdtool flags you will need a recent version)
+
+OBS: In earlier versions, ifgraph needed that you installed the Net::SNMP module
+before using the program. By version 0.4.6rc1, the module is distributed inside the
+ifgraph program, so there is no need of installing it.
+
+
+Steps to start using ifGraph 0.4.10:
+=====================================
+
+1 - Search for the interfaces you want to monitor with the find-if.pl
+script. Let's say you want to monitor host host.something.net, but you dont
+know what interfaces to monitor, you may do something like this:
+
+otherhost 35$ ./find-if.pl -mi some.host.com somecomunity
+OK: session created, getting info from some.host.com
+Showing up interfaces of: some.host.com
+Interface total: 4
+OK: Collecting info on each interface, wait...
+OK: Data collected
+System Description: Linux proxy 2.4.19 #4 Mon Sep 30 09:01:36 BRT 2002 i686
+System Uptime: 4 hours, 07:56.20
+| If #    | Description | Stat | Octets In     | Errors  | Octets Out    | Errors  | IP Address       | MAC Address    |
+------------------------------------------------------------------------------------------------------------------------
+| (1)     | lo          | up   | 3319          | 0       | 3319          | 0       | 127.0.0.1        | not set        |
+| (2)     | eth0        | up   | 13615440      | 0       | 5885740       | 0       | 10.0.10.1        | 00a0:2485:76a1 |
+| (3)     | eth1        | up   | 10182303      | 0       | 8419301       | 0       | 172.16.5.1       | 00e0:4c39:09b5 |
+| (4)     | eth2        | up   | 11305832      | 0       | 16024954      | 0       | 192.168.0.1      | 00e0:4c39:190e |
+
+(OBS: The -mi flag of the find-if.pl tells the script to query for the MAC index and
+the IP index of the SNMP Agent's interfaces. This feature is experimental and
+may not work properly or be changed in the future)
+
+2 - These are the up interfaces. You may choose which one you want to
+monitor. Take note of the interface number (the "if #" field) you selected.
+Starting with ifgraph version 0.4.7, you can also use the fields
+Description, IP Address and MAC Address.
+(If you want to see all interfaces of the host, use the -a flag in the
+find-f.pl. Ex.: ./find-if.pl -a host.something.net community port)
+
+3 - Edit your ifgraph.conf file. The 0.4 branch configuration file is different
+from the 0.3.x. Now there's a session called [global], that defines the default
+values of the variables. The variables specified as (GLOBAL) may be used only in
+the [global] target. The ones specified as (GLOBAL AND TARGETs) may be used in
+the [global] and in the specific targets. And the ones defined as (TARGETs) should
+only be used in the specific targets. Here is the configuration options list:
+
+   * rrdtool (GLOBAL)
+	This directive must point to the rrdtool executable.
+	Default: /usr/local/bin/rrdtool
+
+   * rrddir  (GLOBAL)
+   	This directive must point to a dir where the program will
+	write the rrd files. The user running the program must have reading
+	and writing permission to this directory.
+	Default: /usr/local/rrdfiles/
+	
+   * graphdir  (GLOBAL)
+   	This is the dir where PNG images and the HTML files will be created.
+	makegraph.pl must have reading and writing permission to this dir.
+	Default: /usr/local/htdocs/
+	
+   * template (GLOBAL)
+   	This must point to a directory that contains the following files:
+		main-header.html, main-data.html, main-trailer.html,
+		if-header.html, if-data.html e if-trailer.html.
+	Those files will compose other 2 html files: index.html (main-*.html union) and
+	$target.html (if-*.html union). Only two templates are available for now:
+	templates/en/ (English template)
+	templates/pt-br/ (Brazilian portuguese template)
+	Default: templates/en/
+
+        * If you have a nice template, or just translated to your own language, please send *
+        * it to sartori@lrv.ufsc.br so I can add it to the ifgraph distribution             *
+	
+   * imgformat (GLOBAL)
+	This directive tells ifgraph the image format that it will create using
+	rrdtool. For now there are 4 formats supported:
+	   GIF - Unisys GIF
+	   PNG - Portable Network Graphics
+	   GD - Boutell GD
+	   IGIF - Interlaced GIF 
+   	Default: PNG
+
+   * forks (GLOBAL)
+   	Here you define the number of child processes that will be spawned by the main
+	process during the program's execution. Each child process is responsible for
+	(number of targets/number of forks)+1. For example, if you have 20 targets and
+	a forks=4, the last child will process only two targets, the other three will 
+	query 6 targets each.
+	Default: 1 (means no child process will be created)
+	Ex:
+	forks = 4
+	OBS: This was only tested on Linux and FreeBSD, but probably will work
+	fine on most unices.
+								   
+   * host (GLOBAL AND TARGETs)
+    	Hostname/IP of the SNMP agent. 	Ex.: host = 200.202.202.200
+	Default: localhost
+	
+   * community (GLOBAL AND TARGETs)
+   	The agent's community string. Ex.: community = my-community
+	Default: public
+	
+   * port (GLOBAL AND TARGETs)
+   	The agent's UDP port number. Ex.: port = 1161
+	Default: 161
+	
+   * max (GLOBAL AND TARGETs)
+   	The maximum bandwidth of the selected interface. ifgraph will convert
+	the suffixes k, m and g to kilo, mega and giga. Ex.: max = 64k, max=2M. (These are
+	considered BITS). For asyncronous links (like adsl), you can specify two
+	maximum troughputs, just add a slash between them. 
+	Ex: 256k/64k.
+	The first (256k) describes the maximum input and the other (64k) the max
+	troughput outbound.
+	Default: 1G
+	
+   * dimension (GLOBAL AND TARGETs)
+   	Dimensions of the graphic, in the model width x height.
+	Ex: dimension=550x200
+	Default: 460x150
+	
+   * hbeat (GLOBAL AND TARGETs)
+   	This option defines the behavior that makegraph will adopt when
+	it can't insert data into the rrd. hbeat is an integer (representing seconds)
+	between 300 and 345600. It defines the maximum time interval (in seconds) that
+	rrdtool will accept without data. If you define hbeat to 300, a valid data
+	must be inserted within 300 seconds. If you define it to 84600, you have this
+	period of time to insert data into a RRD. To be simple: the lower the time, the
+	more the 0es showing in the graphic when ifgraph cant contact the SNMP agent. 
+	When the time is higher, less chances of getting 0 data in graphic when 
+	there's a problem in collecting data.
+	This feature is experimental and may not work properly.
+	OBS: You can read more info on heartbeat on the rrdtool site -> http://www.rrdtool.org
+	Default: 600
+	
+   * step (GLOBAL AND TARGETs)
+   	This options defines the time (in seconds) that you plan to feed data
+	into the RRD. If you plan to feed data each minute, you define step as 60.
+	Ex: step = 300
+	Default: 300
+	OBS: You *can not* change the step after the rrd file is created. I do not
+	know any simple way of changind the step on-the-fly. The easy way to see
+	a change in the step directive taking effect in the graphics is erasing the
+	rrd files of the target.
+	
+   * timeout (GLOBAL AND TARGETs)
+   	How long (in seconds) ifgraph will wait for the agent's response. It's
+	a good idea to set it low when the target is in the LAN and a higher
+	time for machines that are in remote locations.
+	Default: 10
+	
+   * retry (GLOBAL AND TARGETs)
+   	How many times ifgraph will query the target in for data.
+	Default: 1
+	
+   * periods (GLOBAL AND TARGETs)
+   	Here you select wich are the periods of data that will be shown in the
+	graphics, separated by commas. You can define a max of 10 periods.
+	Ex: periods = -1hour, -1day, -1month.
+	Default: -1day,-1week,-1month,-1year
+	
+   * rras (GLOBAL AND TARGETs)
+   	Here you define the RRAs of your graphics. This options is usefull if you
+	understand the RRDTool program and the way it builds its Round Robin Database files.
+	You can read more about it at http://www.rrdtool.org. The default rras is:
+	"RRA:AVERAGE:0.5:1:600 RRA:AVERAGE:0.5:6:700 RRA:AVERAGE:0.5:24:775 RRA:AVERAGE:0.5:288:797 RRA:MAX:0.5:1:600 RRA:MAX:0.5:6:700 RRA:MAX:0.5:24:775 RRA:MAX:0.5:288:797"
+	You can build your own RRA based on this one.
+	
+	(OBS: You must use at least one AVERAGE and one MAX RRA (Round Robin Archive) for ifgraph
+	to work)
+	
+	(OBS2: The RRAs can not be changed after the RRD file is created. If you want to change, first
+	delete the proper rrd file)
+	
+   * options (GLOBAL AND TARGETs)
+        There are 8 options available to adjust the graphics. They
+        must be separated by commas. They are:
+	        [no]error - graphics wont show data relative to interface errors.
+		[no]invert - IN becomes OUT and OUT becomes IN.
+		[no]rigid - rigid boundaries mode. Normally rrdtool will automatically expand the 
+			lower and upper limit if the graph contains a value outside the valid range. 
+			With the rigid option you can disable this behavior
+		[no]legend - no legends at all
+		[no]info - makegraph will not ask snmp agents for system information (uptime,
+			location, contact, name and description).
+		[no]minorgrid - if ifgraph should pass the --no-minor argument to the
+				rrdtool program.
+		bytes - makegraph will create graphics in bytes/second
+		bits - makegraph will create graphics in bits/second
+
+	Ex.: options = noerror, invert, rigid
+	Default: error, noinvert, norigid, legend, info, bits, minorgrid
+	
+	(OBS: The bytes/bits options are overriden by the -b/-B flags in the command line)
+	
+	(OBS2: The options [no]error, [no]invert, bytes and bits are only valid in the targets
+	fetched via interface* diretive. They are not valid when the target is oid or command based)
+
+    * type (GLOBAL AND TARGETs)
+    	Here you can define the type of the Round Robin Archive. RRDTool knows 4 types:
+	GAUGE - for things like temperature, number of clients in your irc server, number of
+		people in a room or the value of a RedHat share
+	COUNTER - used for incremental counters, like the IfInOctets OID of the SNMP Agents.
+		The COUNTER type should never decrease, only when an overflow happens, which
+		is considered and treated by the RRDTool update function
+	DERIVE - equal COUNTER, but does not check for overflows
+	ABSOLUTE - for counters that are reset when read. This is used for fast counters that
+		tend to overflow.
+		
+        Ex.: type = DERIVE
+        Default: GAUGE
+	
+	(OBS: This directive will only work when used in OID or COMMAND based targets. In the
+	interface* targets, ifgraph will always build COUNTER rrds)
+	
+    * colors (GLOBAL AND TARGETs)
+    	In this option you will define which colors will be used in the graphics. You
+	must define them separated by commas, in the following formats:
+		- COLORTAG#RRGGBB or
+		- COLORTAG$color name
+		The COLORTAG$color name format will use the Color::Rgb module and the lib/rgb.txt
+	file to convert the color name to a color in the RRGGBB format, so it is understandable
+	by rrdtool.
+	The COLORTAGS are specific parts of the graphics that will be used by rrdtool.
+	They are:
+		BACK - the image background (not the graphic)
+		CANVAS - the graphic's background
+		SHADEA - the left/top border
+		SHADEB - right/bottom border
+		GRID - the graphic grid
+		MGRID - the main grid
+		FONT - the font colors
+		FRAME - the legend's border
+		ARROW - the little arrow
+		IN - data in
+		OUT - data out
+	Ex.: colors=FRAME#223344,CANVAS#AA0022,FONT$black
+	Default: BACK#FFFFFF,CANVAS#F3F3F3,SHADEA#C8C8C8,SHADEB#969696,GRID#8C8C8C,MGRID#821E1E,FONT#000000,FRAME#000000,ARROW#FF0000,IN#FF0000,OUT#000000
+
+        (OBS: The COLORTAGS IN and OUT can only be used when the graphic is interface* based. When
+        collected via OIDs directive, you must use the oiddefs directive)
+			
+    * ylegend (GLOBAL AND TARGETs)
+        Vertical label on the left side of the graph.
+	Defaults:
+		For graphics in bits: Bits In/Bits Out
+		For graphics in bytes: Bytes In/Bytes Out
+		For OIDs graphics: Data collected via SNMP
+		For command graphics: Command Outputs
+
+    * title (GLOBAL AND TARGETs)
+    	Define a title to be written into the graph
+	Defaults:
+		For graphics in bits: Bits In/Out for interface (interface number) of (target host)
+		For graphics in bytes: Bytes In/Out for interface (interface number) of (target host)
+		For OIDs graphics: Data for host (target host)
+		For command graphics: Command Outputs
+
+    * kilo (GLOBAL AND TARGETs)
+    	This defines what is the value of 1k. When you are dealing with network data, 1k = 1000,
+	so you define:
+		kilo=1000
+	If you are creating graphics about memory, 1k is equal to 1024, so you must use:
+		kilo=1024
+	Default: 1000
+								
+    * precision (GLOBAL e TARGETs)
+	This sets the number of decimal algarisms to be shown. Setting it to 0 will make ifgraph
+	ignore the decimal algarisms.
+        Default: 2
+				 
+	
+4 - After the global configuration, you must create and configure the targets. To do so,
+add a newline with the name of the target between brackets:
+
+[new_target_name]
+
+	The target's name can only use alphanumeric characters, so, dont use spaces
+	on it. You cant use also the name global for it, as this is the global configuration
+	name. After creating the target's name, you must, AT LEAST, define one of the interface
+	directives:
+   
+   * interface (TARGETs)
+   	This directive defines the interface number of the hardware you want to collect data.
+	It corresponds to the "if #" that find-if.pl shows to you.
+	You can also reconfigure the defaults you setted in the [global] target, customizing the target
+	in the way you like more.
+	Ex.: 
+		interface = 2
+	Default: none
+ 
+   * interface_name (TARGETs)
+	This directive allows you to define what is the interface's name (it's description). The name
+	can be fetched in the "Description" field when running find-if.pl.
+	Example:
+		interface_name = eth0
+	Default: none
+	
+   * interface_mac (TARGETs)
+	The interface_mac option allows that you choose the interface by using it's MAC
+	Address. You may use the old ifgraph format (ex: 0x00a0248576a1) or the commonly
+	used formats (ex: 00a0:2485:76a1, 00:a0:24:85:76:a1)
+	Examples:
+		interface_mac = 0x00a0248576a1
+		interface_mac = 00a0:2485:76a1
+	Default: none
+	
+   * interface_ip (TARGETs)
+   	With interface_ip you can choose what interface to monitor using it's IP address. Note
+	that the IP of the interface may (and most of the times is) be different of the
+	target's ip address. You may fetch the ip address using the find-if.pl script with
+	the -i command line parameter.
+	Example:
+		interface_ip = 172.16.5.1
+	Default: none
+
+   * oids (TARGETs)
+   	The oids directive allows you to declare specific OIDs you want ifgraph to monitor.
+	You can declare as many as you want as far you separate them by commas and they
+	represent integer data. For example, if you want to monitor the IDLE TIME of some
+	computer running the Net SNMP Agent (http://www.net-snmp.org), you may define
+	the oids directive like this:
+		oids = 1.3.6.1.4.1.2021.11.11.0
+		
+	With the same SNMP agent, you can monitor the real and swap memory behavior:
+		oids = 1.3.6.1.4.1.2021.4.4.0,1.3.6.1.4.1.2021.4.6.0
+	Default: none
+
+    * command (TARGET)
+	In this directive you specify what command is to be run by ifgraph so it
+	can gather some input data. The executed command must return a valid data per
+	line.
+	Example: if you want to collect the total number of processes in a SGI
+	workstation running IRIX 6.5, you can use the following:
+		command = top -b | head -n 2 | grep processes | cut -c 1-3
+		Using the same logic, you can monitor the use in your linux
+		desktop with the following definition:
+		command = grep "^Mem:" /proc/meminfo  | cut -d " " -f 4
+	Default: none
+	
+	(OBS: this was not fully tested, so it may not work exactly as expected.
+	Please send feedback to sartori@lrv.ufsc.br if you had problems 
+	setting up/running command targets)
+
+   * oiddefs (TARGETs)
+   	For each oid defined in the oids option, you must define the respective graphical
+	type and color in the format (LINE1|LINE2|LINE3|AREA|STACK)(#RRGGBB|$color name).
+	Examples:
+		oids = 1.3.6.1.4.1.2021.11.11.0
+		oiddefs = AREA#00FF00
+
+		oids=1.3.6.1.4.1.2021.15.12.1
+		oiddefs = LINE2$gray
+
+		oids = 1.3.6.1.4.1.2021.4.4.0,1.3.6.1.4.1.2021.4.6.0
+		oiddefs = LINE3#FF0000,AREA$green
+		
+	Note that for each oid configured in the oids option, there must be a definition in
+	this directive.
+	Default: none
+
+     * commdefs (TARGET)
+	With this you define how the outputs from the command executed should be
+	represented in your graphic. You must set a definition for each output
+	of the command. The format is the graphical type followed by the color definition:
+	(LINE1|LINE2|LINE3|AREA|STACK)(#RRGGBB|$color name).
+	Example:
+	If you created a script that shows the % use of each partition in your system, and
+	this system has 4 partitions, the output must look like this:
+		20
+		43
+		53
+		70
+	So, you have to define 4 definitions in the commdefs for this target, like 
+	the following:
+		commdefs = LINE2$red, LINE2$blue, LINE3#DDAA33, LINE1$yellow
+	Default: none
+        
+	(OBS: this was not fully tested, so it may not work exactly as expected.
+        Please send feedback you had problems setting up/running command targets)
+			
+    * legends (TARGETs)
+    	Here you define the data legend. It is mandatory that you use this when you
+	are monitoring OID variables/command outputs via oids directive/commands. If the 
+	target uses interface* declarations, you do not need to use this. For each oid 
+	declared in the oids directive, there must be a correspondent in the legends. 
+	For example:
+		legends = Idle CPU Time
+		legends = Swap Memory, Real Memory
+		legends = /, /usr, /var, /var/mail, /opt
+	Defaults:
+		For graphics in bits: Bits In, Bits Out
+		For graphics in bytes: Bytes In, Bytes out
+		For OIDs graphics: none
+		For command graphics: none
+
+    * graph (TARGETs)
+    	With this directive you can supress the creation of the targets graphic.
+	Examples:
+		graph = no
+		graph = false
+	Default: true,yes
+
+    * update (TARGETs)
+    	This directive must be used to decide if ifgraph should or should not update data in the rrd.
+	This may be useful if you wrote your own update program but still want to use makegraph to
+	create the graphics.
+	Examples:
+		update = yes
+		update = no
+	Default: true, yes
+
+    The interface, interface_name, interface_mac and interface_ip directives are exclusive. IFGraph
+    will not complain if you use more then one of this definitions in the same target, but it
+    will probably not work as expected.
+				
+
+5 - When everything is set, just configure the crontab to execute the script:
+
+*/5 * * * * /path/to/ifgraph/ifgraph.pl -c /path/to/ifgraph.conf ; /path/to/ifgraph/makegraph.pl -c /path/to/ifgraph.conf > /dev/null
+
+	The line above will instruct the crontab to run ifgraph and makegraph every five
+	minutes. You DO NOT need to run ifgraph and makegraph together. You may, for example, collect data
+	every minute, but only create the graphics every hour, like this:
+
+* * * * * /path/to/ifgraph/ifgraph.pl -c /path/to/ifgraph.conf > /dev/null
+0 * * * * /path/to/ifgraph/makegraph.pl -c /path/to/ifgraph.conf > /dev/null

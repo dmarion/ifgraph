@@ -1,0 +1,442 @@
+ifGraph 0.4.10 - 03/01/2004 - Ricardo Sartori <sartori@lrv.ufsc.br>
+
+Requerimentos:
+ - Perl >= 5.0.5 (http://www.perl.org)
+ (recomendada a perl > 5.6)
+ - RRDTool >= 1.3.32 (http://ee-staff.ethz.ch/~oetiker/webtools/rrdtool/)
+ (pode ser necessario uma versao mais atual para poder utilizar alguns features novos)
+
+OBS: Era necessario que o modulo da perl Net::SNMP fosse instalado como requerimento
+para que o ifgraph funcionasse. A partir da versao 0.4.6rc1, o modulo eh distribuido junto
+com o programa, nao necessitando de nenhuma instalacao.
+
+Passos para usar o ifGraph 0.4.10:
+=================================
+
+1 - Procure pelas interfaces que voce deseja monitorar usando o comando
+find-if.pl. Digamos que voce queira monitorar alguma interface do host
+algum.host.com.br, mas nao sabe qual, voce deve usar o comando assim:
+
+otherhost 35$ ./find-if.pl -im algum.host.com.br
+OK: session created, getting info from algum.host.com.br
+Showing up interfaces of: algum.host.com.br
+Interface total: 4
+OK: Collecting info on each interface, wait...
+OK: Data collected
+System Description: Linux proxy 2.4.19 #4 Mon Sep 30 09:01:36 BRT 2002 i686
+System Uptime: 4 hours, 07:56.20
+| If #    | Description | Stat | Octets In     | Errors  | Octets Out    | Errors  | IP Address       | MAC Address    |
+------------------------------------------------------------------------------------------------------------------------
+| (1)     | lo          | up   | 3319          | 0       | 3319          | 0       | 127.0.0.1        | not set        |
+| (2)     | eth0        | up   | 13615440      | 0       | 5885740       | 0       | 200.135.12.134   | 00a0:2485:76a1 |
+| (3)     | eth1        | up   | 10182303      | 0       | 8419301       | 0       | 172.16.5.1       | 00e0:4c39:09b5 |
+| (4)     | eth2        | up   | 11305832      | 0       | 16024954      | 0       | 192.168.0.1      | 00e0:4c39:190e |
+
+(OBS: As flags -mi passadas ao find-if.pl fazem com que o script solicite
+as tabelas de endereco MAC e IP do agente SNMP. Esta feature eh experimental
+e pode nao funcionar de acordo ou ser mudado no futuro)
+
+2 - Essas sao as interfaces ativas do host. Voce deve escolher quais dela
+voce quer monitorar. Anote o numero (campo "if #") das que voce selecionou.
+A partir da versao 0.4.7, voce pode utilizar tambem o campo Description, IP Address e
+MAC Address.
+(Se voce deseja ver todas as interfaces disponiveis de um host, use a flag -a
+no find-if.pl. Ex.: ./find-if.pl -a algum.host.com.br comunidade porta)
+
+3 - Edite o arquivo de configuracao ifgraph.conf. A configuracao do ifgraph branch
+0.4 eh diferente das versoes 0.3.x. Voce tem uma secao chamada [global], na qual voce
+coloca as configuracoes que voce deseja que sejam as padroes. As opcoes marcadas com
+(GLOBAL) devem ser usadas somente no target [global]. As diretivas marcadas com (GLOBAL 
+E TARGET) podem ser utilizadas tanto no target [global] quanto nos especificos e as
+diretivas marcadas com (TARGET) devem ser utilizadas soh nos alvos especificos.
+	Sao elas:
+
+   * rrdtool (GLOBAL)
+	Deve apontar para o caminho do programa rrdtool.
+	Valor padrao: /usr/local/bin/rrdtool
+	
+   * rrddir (GLOBAL)
+	Deve indicar um diretorio na qual o programa gravara os arquivos rrd. O usuario
+	que roda o programa deve ter permissao de leitura e escrita no diretorio.
+	Valor padrao: /usr/local/rrdfiles/
+	
+   * graphdir (GLOBAL)
+        Deve apontar para o diretorio onde ficarao as imagens .PNG e os arquivos HTML.
+	O programa deve ter permissao de leitura e escrita nesse diretorio.
+	Valor padrao: /usr/local/htdocs/
+	
+   * template (GLOBAL)
+   	Deve apontar o caminho de um diretorio que contenha os seguintes arquivos:
+		main-header.html, main-data.html, main-trailer.html,
+		if-header.html, if-data.html e if-trailer.html.
+	Esses arquivos sao pedacos de HTML que unidos formarao dois outros arquivos HTML,
+	o index.html (formado pela uniao dos arquivos main-*html) e o target.html 
+	(uniao dos if-*.html).
+	Atualmente estao disponiveis 2 templates: en (ingles) e pt-br (portugues do brasil),
+	ambos dentro do diretorio templates.
+	Valor padrao: templates/en/
+
+	* Se voce construiu um template interessante ou simplesmente o traduziu pra       *
+	* sua lingua, mande-o para sartori@lrv.ufsc.br para que eu inclua na distribuicao *
+	
+   * imgformat (GLOBAL)
+   	Essa diretiva indica qual vai ser o formato de arquivo de imagem que o ifgraph
+	vai criar com o rrdtool. Atualmente sao suportados 4 tipos de formato:
+	   GIF - Unisys GIF
+	   PNG - Portable Network Graphics
+	   GD - Boutell GD
+	   IGIF - Interlaced GIF (o browser vai carregando a imagem aos poucos)
+	Valor padrao: PNG
+
+   * forks (GLOBAL)
+   	Aqui voce define o numero de processos filhos (atachados ao processo inicial) que 
+	serah criado durante a execucao dos scripts. Cada processo filho eh responsavel
+	por (numero de targets/numero de forks)+1 targets. Por exemplo, se voce tiver 20
+	targets e setar forks=4, os 3 primeiros processos filhos processarao 6 targets e
+	o ultimo processara apenas 2.
+	Valor padrao: 1 (significa rodar sem nenhum processo filho)
+	Ex:
+	forks = 4
+	OBS: este feature foi testado somente em Linux e FreeBSD, mas deve funcionar
+	adequadamente na maioria dos unices.
+	
+   * host (GLOBAL E TARGET)
+   	O host ou ip da maquina onde o agente SNMP esta rodando Ex.: host = 200.202.202.200
+	Valor padrao: localhost
+	
+   * community (GLOBAL E TARGET)
+   	A comunidade de acesso do agente Ex.: community = my-intranet
+	Valor padrao: public
+	
+   * port (GLOBAL E TARGET)
+   	A  porta na qual o agente estah rodando Ex.: port = 1161
+	Valor padrao: 161
+	
+   * max (GLOBAL E TARGET)
+   	O troughput maximo da interface selecionada. O ifgraph entende as keywords k, m e g,
+	para descrever kilo, mega e giga. Ex.: max = 64k, max = 2M.
+	Se voce possui uma interface assincrona, como um ADSL, voce pode definir dois
+	troughputs maximos usando uma /. O primeiro campo indica o troughput maximo de entrada
+	e o segundo o de saida. Ex.: max = 256k/64k
+	Valor padrao: 1G
+	
+   * dimension (GLOBAL E TARGET)
+	As dimensoes do seu grafico, no formato largura x altura
+	Ex.: dimension = 520x200
+	Valor padrao: 460x150
+	
+   * hbeat (GLOBAL E TARGET)
+   	Essa opcao define o comportamento que o makegraph ira assumir quando nao
+        for possivel inserir os dados no rrd. O hbeat eh um inteiro (representando segundos)
+        de valor maior que 60 e menor que 345600. Ele define o maximo de tempo
+        (em segundos) que os rrds vao aceitar sem receber dados. Se voce definir como
+        300, um dado valido deve ser inserido no rrd a cada 300 segundos. Se voce
+        definir como 84600, voce tem esse tempo para inserir um dado no RRD. Simplificando,
+        quando esse tempo for baixo, falhas na coleta de dados se refletirao em 0s
+        no grafico. Se for alto, os ultimos dados coletados antes da falha se manterao.
+        Este feature eh experimental e pode nao funcionar da maneira adequada.
+        OBS: Voce pode ler mais sobre o heartbeat na pagina do rrdtool http://www.rrdtool.org
+	Valor padrao: 600
+	
+    * step (GLOBAL E TARGET)
+    	Esta opcao define o intervalo (em segundos) na qual voce pretende coletar (e inserir)
+	dados nos arquivos RRD. Se voce pretende coletar dados a cada minuto, defina
+	o step como 60. Se a intencao eh coletar dados a cada 5 minutos (como o mrtg), voce
+	deve definir o step como 300 (5 minutos x 60 segundos).
+	Valor padrao: 300
+	OBS: Voce *nao pode* mudar o valor da diretiva step apos a criacao dos arquivos rrd.
+	Eu nao conheco nenhum jeito simples para alterar o step dos arquivos "on-the-fly". A
+	maneira mais simples para ver o efeito da alteracao do step eh apagar os arquivos rrd
+	e log referentes ao target.
+	
+    * timeout (GLOBAL E TARGET)
+    	Define o tempo (em segundos) que o ifgraph deve esperar apos fazer uma solicitacao
+	SNMP. Uma boa ideia eh definir tempos baixos para equipamentos que estao na mesma
+	LAN e tempos um pouco maiores para equipamentos que se encontram mais distantes.
+	Valor padrao: 10
+	
+    * retry (GLOBAL E TARGET)
+  	Quantas vezes o ifgraph vai tentar coletar dados do agente SNMP caso este nao
+	responda.
+	Valor padrao: 1
+	
+    * periods (GLOBAL E TARGET)
+    	Aqui voce seleciona quais os periodos que voce deseja que sejam mostrados na
+	pagina. Voce pode definir no maximo 10 periodos, separados por virgulas.
+	Ex.: -1day, -1week, -1month
+	Valor padrao: -1day,-1week,-1month,-1year
+	
+    * RRAs (GLOBAL E TARGET)
+    	Essa diretiva eh um tanto complexa e eh mais voltada para quem jah estah familiarizado
+	com as capacidades e features do RRDTool. Ela permite com que voce configure
+	um rrd de forma mais afinada, selecionando o tempo base e quantas linhas de dados deverao
+	ser gravadas em um RRD. 
+	Valor padrao: RRA:AVERAGE:0.5:1:600 RRA:AVERAGE:0.5:6:700 RRA:AVERAGE:0.5:24:775 RRA:AVERAGE:0.5:288:797 RRA:MAX:0.5:1:600 RRA:MAX:0.5:6:700 RRA:MAX:0.5:24:775 RRA:MAX:0.5:288:797.
+	Se voce desejar alterar, tenha em mente que o ifgraph necessita que seja criado pelo
+	menos 1 RRA AVERAGE e um RRA MAX. Voce pode obter mais informacoes sobre como
+	ajustar os RRAs na pagina do RRDTool: http://www.rrdtool.org
+
+	OBS: Voce deve utilizar pelo menos um RRA AVERAGE e um MAX para que o arquivo funcione
+	com o ifgraph.
+	OBS2: Apos criado o arquivo rrd, os RRAs nao podem ser mudados. Para que voce mude o RRA
+	do seu target, eh necessario apagar seus arquivos rrd.
+	
+    * options  (GLOBAL E TARGET)
+    	 Sao 8 opcoes disponiveis para ajustar o estilo do grafico. Elas devem estar 
+	 separadas por virgulas. Sao elas:
+		[no]error - se serao mostrados dados relativos aos erros na interface.
+		[no]invert - os dados coletados como IN passam a ser mostrados como OUT e vice-versa.
+		[no]rigid - normalmente o rrdtool vai ajustar os limites do seu grafico de acordo
+		      	    com os valores a serem plotados. Com essa opcao ativada, os limites
+			    serao sempre setados em MAX.
+		[no]legend - se deve ou nao criar legendas nos graficos.
+		[no]info - se deve ou nao coletar dados SNMP (uptime, contato, local, nome e descricao)
+			   durante a criacao de paginas dos targets.
+		[no]minorgrid - se a opcao --no-minor deve ser passada ao rrdtool quando o grafico
+				do target for criado.
+		bytes - o makegraph vai criar graficos em bytes/segundo para os graficos de interface
+		bits - o makegraph vai criar graficos em bits/segundo para os graficos de interface
+
+        Ex.: invert, noerror,rigid
+        Valor padrao: error, noinvert, norigid, legend, info, bits, minorgrid
+	
+	(OBS: as opcoes de linha de comando -b/-B tem preferencia sobre as opcoes
+	bits/bytes e nao sao validas quando o target possui a diretiva oids ou command)
+		
+	(OBS2: As opcoes [no]error, [no]invert, bytes e bits soh sao aplicaveis nos targets 
+	coletados via diretiva interface*. Elas nao sao validas nos targets obtidos atraves 
+	da diretiva OIDS ou COMMAND)
+
+     * type (GLOBAL E TARGET)
+     	Aqui voce define o tipo de RRD que sera criado. O RRDTool disponibiliza 4 tipos:
+	GAUGE - para valores como temperatura, numero de usuarios conectados no seu servidor de IRC, o numero
+		de pessoas numa sala ou o valor de uma acao da Red Hat.
+	COUNTER - utilizado para contadores incrementais, como o OID ifInOctets dos agentes SNMP. O 
+		COUNTER nunca deve diminuir, somente quando ocorre um overflow, que eh 
+		considerado/tratado na funcao update do RRDTool.
+	DERIVE - igual ao COUNTER, soh que nao verifica overflows.
+	ABSOLUTE - deve ser utilizado com contadores que sao resetados depois de lidos. Isso maximiza o tempo
+		entre overflows, geralmente utilizado em dados que aumentam muito rapidamente.
+
+        Ex.: type = DERIVE
+        Valor padrao: GAUGE
+			
+	(OBS.: A diretiva type soh surtirah efeito quando utilizada para um target OID ou COMMAND. Nos 
+	targets baseados em interface*, serao construidos sempre databases do tipo COUNTER)
+
+     * colors (GLOBAL E TARGET)
+     	Nessa opcao voce define quais serao as cores que deverao ser utilizadas nos graficos. Voce deve
+	definir as cores separadas por virgulas, nos seguintes formatos:
+		- COLORTAG#RRGGBB ou
+		- COLORTAG$nome da cor
+		O formato COLORTAG$nome da cor utiliza o modulo Color::Rgb e o arquivo lib/rgb.txt para
+	converter o string "nome da cor" para o formato hexadecimal que o rrdtool entende.
+	Os COLORTAGs sao partes especificas dos graficos que serao passadas para o rrdtool. Sao elas:
+		BACK - a cor de fundo da imagem (nao do grafico)
+		CANVAS - a cor de fundo do grafico
+		SHADEA - a borda de cima/esquerda
+		SHADEB - a borda de baixo/direita
+		GRID - as linhas dos graficos
+		MGRID - a grade principal
+		FONT - a cor das fontes
+		FRAME - o contorno das legendas
+		ARROW - a cor da setinha no canto direito do grafico
+		IN - cor dos dados de entrada
+		OUT - cor dos dados de saida
+	Ex.: colors=FRAME#223344,CANVAS#AA0022,FONT$black
+	Valor padrao: BACK#FFFFFF,CANVAS#F3F3F3,SHADEA#C8C8C8,SHADEB#969696,GRID#8C8C8C,MGRID#821E1E,FONT#000000,FRAME#000000,ARROW#FF0000,IN#FF0000,OUT#000000
+
+	(OBS.: As COLORTAGS IN e OUT soh funcionam quando os dados sao coletados via diretivas
+	interface*. Quando  coletados via OID, devem ser definidos na diretiva OIDDEFS)
+
+	
+     * ylegend (GLOBAL E TARGET)
+     	A legenda a ser mostrada no canto esquerdo do grafico, na vertical, junto ao eixo Y.
+	Valores padrao:
+		Para grafico em bits: Bits In/Out
+		Para grafico em bytes: Bytes In/Out
+		Para grafico de OIDs: Data collected via SNMP
+		Para grafico de COMMAND: Command Outputs
+		
+     * title (GLOBAL E TARGET)
+     	Aqui voce pode definir o titulo do grafico, ou seja, o texto que fica na parte superior do grafico,
+	geralmente em negrito.
+	Valores padrao:
+		Para grafico em bits: Bits In/Out for interface (interface number) of (target host)
+		Para grafico em bytes: Bytes In/Out for interface (interface number) of (target host)
+		Para grafico de OIDs: Data for host (target host)
+		Para grafico de COMMAND: Output from (target command)
+		
+     * kilo (GLOBAL E TARGET)
+     	Essa diretiva tem como funcao definir quantas unidades 1 kilo (1k) vale. Quando se trata de
+	dados de rede, 	1k=1000, portanto voce deve utilizar a diretiva kilo assim:
+		kilo=1000.
+	Quando se trata de memoria, 1k=1024, portanto, o uso da diretiva eh como segue:
+		kilo=1024.
+	Valor padrao: 1000.
+
+     * precision (GLOBAL e TARGET)
+     	Representa o numero de casa decimais a ser mostrada. Definir como 0 suprime a impressao das casas
+	decimais.
+	Valor padrao: 2
+
+4 - Apos acertadas as configuracoes globais, voce deve criar targets e configura-los.
+Para criar um target, basta adicionar uma linha contendo o nome do target entre colchetes, assim:
+
+[novo_target]
+
+	O nome do target nao pode estar separado por espacos e eh recomendavel que contenha somente
+	caracteres alfanumericos. Voce nao pode utilizar o nome "global" para criar um novo target.
+	
+	Voce deve agora inserir uma dentre as diretivas que sao EXCLUSIVAS dos targets:
+	
+    * interface (TARGET)
+    	Essa diretiva define o numero da interface sob a qual serao coletados os dados. Ela
+	corresponde ao campo "if #" que aparece no find-if.pl. Ex.: interface = 2
+	Voce pode ainda redefinir as opcoes que voce configurou no target [global], customizando
+	de forma adequada seu target. 
+	Exemplo:
+		interface = 1
+	Valor padrao: nenhum
+	
+    * interface_name (TARGET)
+    	Essa diretiva permite com que voce defina qual eh o nome da interface a ser monitorada.
+	O nome das interfaces pode ser obtido no campo "Description" do comando find-if.pl.
+	Exemplo:
+		interface_name = eth0
+	Valor padrao: nenhum
+	
+    * interface_mac (TARGET)
+    	A diretiva interface_mac permite com que voce escolha a interface de rede a ser monitorada
+	a partir do seu endereco fisico (MAC Address). Voce pode utilizar o MAC no antigo formato
+	do ifgraph (ex: 0x00a0248576a1) os nos formatos normlamente utilizados (ex: 00a0:2485:76a1 ou
+	00:a0:24:85:76:a1).
+	Exemplos:
+		interface_mac = 0x00a0248576a1
+		interface_mac = 00a0:2485:76a1
+	Valor padrao: nenhum
+	
+    * interface_ip (TARGET)
+    	A diretiva interface_ip permite com que voce selecione a interface a partir do seu IP. Note
+	que o endereco IP da interface pode nao ser o mesmo do target. O endereco ip deve estar 
+	exatamente no mesmo formato do que eh mostrado no find-if.pl.
+	Exemplo:
+		interface_ip = 172.16.5.1
+	Valor padrao: nenhum
+
+    * oids (TARGET)
+    	A diretiva acima permite com que sejam declarados especificamente os OIDs que contem os
+	dados que voce deseja coletar. Os OIDs devem estar separados por virgulas e o agente deve 
+	retorna-los atraves de numeros inteiros. Por exemplo, se voce deseja coletar a porcentagem de 
+	IDLE TIME de um computador atraves do Agente SNMP Net-SNMP (http://www.net-snmp.org), basta 
+	utilizar a seguinte diretiva oids:
+		oids = 1.3.6.1.4.1.2021.11.11.0
+		Utilizando o mesmo agente, pode ser monitorado o comportamento da memoria swap e da
+		memoria real disponivel:
+		oids = 1.3.6.1.4.1.2021.4.4.0,1.3.6.1.4.1.2021.4.6.0
+	Valor padrao: nenhum
+	
+    * command (TARGET)
+    	Com a diretiva command voce especifica o comando que sera executado pelo ifgraph para
+	que seja possivel realizar a coleta de dados. O comando executado deve retornar um dado
+	valido por linha. Por exemplo, se voce deseja coletar o numero total de processos
+	de uma estacao SGI rodando IRIX 6.5 atraves do comando ps, a linha command deve ser a
+	seguinte:
+		command = top -b | head -n 2 | grep processes | cut -c 1-3
+		Utilizando o mesmo raciocinio, voce pode obter o quanto sua estacao linux estah
+		usando de memoria:
+		command = grep "^Mem:" /proc/meminfo  | cut -d " " -f 4
+   	Valor padrao: nenhum
+	
+	(OBS: este feature nao foi intensivamente testado, podendo, portanto,
+	nao se comportar como eh esperado. Se voce estah tendo problemas para
+	configurar/rodar um target baseado nessa diretiva, entre em contato via
+	email: sartori@lrv.ufsc.br)
+
+    * oiddefs (TARGET)
+    	Essas sao as definicoes dos OIDs acima definidos. Consiste da diretiva grafica do rrdtool (LINE1,
+	LINE2,LINE3,AREA,STACK) seguida da cor que serah utilizada pra representar o OID, no formato 
+	#RRGGBB ou $nome da cor. Seguindo o formato dos exemplos abaixo:
+		oids = 1.3.6.1.4.1.2021.11.11.0
+		oiddefs  = AREA#00FF00
+
+		oids = 1.3.6.1.4.1.2021.12.13.1
+		oiddefs = LINE1$blue
+
+		oids = 1.3.6.1.4.1.2021.4.4.0,1.3.6.1.4.1.2021.4.6.0
+		oiddefs = LINE3#FF0000,AREA$green
+
+	Note que para cada oid configurado na diretiva oids, existe uma definicao equivalente
+	na diretiva oiddefs.
+	Valor padrao: nenhum
+	
+     * commdefs (TARGET)
+     	Aqui voce define como cada output da diretiva command deve ser representado. Para cada
+	dado de saida apresentado durante a execucao do programa, deve existir uma definicao
+	nessa diretiva. Consiste da diretiva grafica do rrdtool (LINE1,LINE2,LINE3,AREA,STACK) 
+	seguida da cor que serah utilizada pra representar o dado em questao, no formato
+	#RRGGBB ou $nome da cor.
+	Por exemplo, dado o script df.sh que formata a saida do comando df para mostrar somente
+	a % de uso de cada particao. Dado que o sistema tenha 4 particoes, a saida
+	do comando seria semelhante ao seguinte:
+		20
+		43
+		53
+		70
+	Logo, voce teria que definir o commdefs da seguinte maneira:
+	commdefs = LINE2$red, LINE2$blue, LINE3#DDAA33, LINE1$yellow
+	Valor padrao: nenhum
+        
+	(OBS: este feature nao foi intensivamente testado, podendo, portanto,
+	nao se comportar como eh esperado. Se voce estah tendo problemas para
+	configurar/rodar um target baseado nessa diretiva, entre em contato via
+	email: sartori@lrv.ufsc.br)
+				
+
+     * legends (TARGET)
+     	Essa diretiva define a legenda que identifica o dado. Se os dados a serem coletados
+	sao de interfaces de rede (atraves das diretivas interface, interface_name, interface_mac
+	e interface_ip), essa diretiva eh desnecessaria. Ela deve ser utilizada no caso dos graficos
+	que serao criados para representar dados de OIDs/comandos diretamente, por exemplo a porcentagem 
+	de espaco em disco, a memoria disponivel, o numero de requisicoes por hora em um web server...
+	Voce deve declarar uma legenda para cada OID/output do comando definido na opcao oids/command.
+		Exemplo:
+		legends = Idle time do CPU
+		legends = Memoria Real Disponivel, Memoria Swap Disponivel
+		legends = /,/usr,/var,/var/mail,/opt
+	Valores padrao: 
+		Para grafico em bits: Bits In,Bits Out
+		Para grafico em bytes: Bytes In,Bytes Out
+		Para grafico de OIDs: nenhum
+		Para grafico de comandos: nenhum
+
+     * graph (TARGET)
+     	Essa diretiva deve ser utilizada para decidir se o grafico do target deve ou nao ser criado.
+	Exemplos:
+		graph = no
+		graph = true
+	Padrao: yes,true
+
+     * update (TARGET)
+     	Essa diretiva deve ser utilizada para decidir se o ifgraph deve atualizar ou nao o RRD. Pode
+	ser util se voce desenvolveu alguma outra aplicacao que realiza o trabalho de update mas 
+	deseja que os graficos sejam criados com o makegraph.
+	Exemplos:
+		update = no
+		update = true
+	Padrao: yes,true
+
+    As diretivas interface, interface_name, interface_mac e interface_ip sao exclusivas. O ifgraph
+    nao vai reclamar se voce utilizar mais de uma delas no mesmo target, mas os resultados podem
+    nao ser bem os esperados.
+    
+5 - Apos tudo corretamente configurado, basta adicionar as seguintes linhas na crontab:
+
+*/5 * * * * /path/to/ifgraph/ifgraph.pl -c /path/to/ifgraph.conf ; /path/to/ifgraph/makegraph.pl -c /path/to/ifgraph.conf > /dev/null
+
+	A linha criada acima coleta e constroi graficos de 5 em 5 minutos. Voce pode altera-la a seu gosto,
+	fazendo, por exemplo, com que a coleta de dados seja realizada a cada minuto, mas a construcao 
+	de graficos aconteca a cada 10 minutos, como no exemplo abaixo:
+
+* * * * * /path/to/ifgraph/ifgraph.pl -c /path/to/ifgraph.conf > /dev/null
+*/10 * * * * /path/to/ifgraph/makegraph.pl -c /path/to/ifgraph.conf > /dev/null

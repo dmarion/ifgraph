@@ -1,0 +1,7 @@
+cpu_states.sh
+------------------
+This scrit will read the /proc/stat file, getting
+information about the four CPU states:
+User, Nice, System, Idle
+
+More info in the proc man page.

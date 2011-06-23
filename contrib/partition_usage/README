@@ -1,0 +1,12 @@
+partition_usage.sh
+------------------
+This script will use the df command to show the partition
+usage in megabytes (-m flag to df). It will get the
+total partition size, the used space and the free space.
+If you want to visualize it in a different base unit,
+say kbytes, alter the df flag in the partition_usage.sh
+script.
+This script requires a parameter to work. You must
+show what is the partition the script will get information
+for. Like this:
+command=/path/to/partition_usage.sh sda5

@@ -1,0 +1,25 @@
+squid_monitoring
+------------------
+Here is an config example of how to use ifgraph to
+monitor your squid proxy. Those configurations
+*WILL NOT WORK AT ALL IF YOUR SQUID IS NOT COMPILED
+WITH SNMP SUPPORT*. Those config monitor the following
+data:
+- Memory used by the squid process
+- Hits/Misses/Clients Requests per second
+- The amount of internet data (bytes) going in/out
+- The miss/hit time
+- DNS Requests, DNS Replies
+
+You can monitor MUCH more squid information. For more,
+see the following sites:
+
+- http://www.squid-cache.org/Doc/FAQ/FAQ-18.html
+- http://www.squid-cache.org/SNMP/
+- http://wessels.squid-cache.org/squid-rrd/
+- http://www.serassio.it/SquidNT/mrtg.htm
+- http://squid.visolve.com/related/snmp/monitoringsquid.htm
+- http://www.arnes.si/~matija/utrecht/lecture.html
+- http://howto.aphroland.de/HOWTO/MRTG/SquidMonitoringWithMRTG
+- http://www.psychofx.com/chris/unix/mrtg/
+- http://thproxy.jinr.ru/file-archive/doc/squid/cache-snmp/mrtg-demo/

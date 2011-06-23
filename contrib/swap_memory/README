@@ -1,0 +1,6 @@
+swap_memory.sh
+------------------
+This script will use the free command to
+get information about the swap memory usage.
+This info will be passed to awk so you
+can get the total, used and free memory.
